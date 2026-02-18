@@ -47,6 +47,8 @@ jobs:
           - os: ubuntu-latest
             target: aarch64
           - os: ubuntu-latest
+            target: armv7
+          - os: ubuntu-latest
             target: ppc64le
           - os: ubuntu-latest
             target: s390x
