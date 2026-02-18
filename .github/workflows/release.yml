@@ -2,9 +2,8 @@ name: Release
 
 on:
   push:
-    branches:
-      - master
-      - main
+    tags:
+      - "v*"
   workflow_dispatch:
 
 permissions:
@@ -12,42 +11,16 @@ permissions:
   id-token: write
 
 jobs:
-  check-version:
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.get_version.outputs.version }}
-      exists: ${{ steps.check_tag.outputs.exists }}
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Get version
-        id: get_version
-        run: |
-          VERSION=$(grep '^version' pyproject.toml | head -1 | cut -d '"' -f 2)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          
-      - name: Check if tag exists
-        id: check_tag
-        run: |
-          git fetch --tags
-          if git rev-parse "v${{ steps.get_version.outputs.version }}" >/dev/null 2>&1; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
-
   build-wheels:
-    needs: check-version
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
             target: x86_64
           - os: ubuntu-latest
             target: aarch64
-          - os: ubuntu-latest
-            target: armv7
           - os: ubuntu-latest
             target: ppc64le
           - os: ubuntu-latest
@@ -58,16 +31,23 @@ jobs:
             target: aarch64
           - os: windows-latest
             target: x64
+
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up QEMU
         if: matrix.os == 'ubuntu-latest' && matrix.target != 'x86_64'
         uses: docker/setup-qemu-action@v3
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
           args: --release --strip
+
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -78,11 +58,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
           command: sdist
           args: --out dist
+
       - name: Upload sdist
         uses: actions/upload-artifact@v4
         with:
@@ -90,39 +75,32 @@ jobs:
           path: dist/*.tar.gz
 
   publish:
-    name: Publish to PyPI
-    needs: [check-version, build-wheels, build-sdist]
-    if: needs.check-version.outputs.exists == 'false' && github.event_name == 'push'
+    needs: [build-wheels, build-sdist]
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Download artifacts
+      - name: Download wheel artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: wheels-*
           path: dist
           merge-multiple: true
 
-      - uses: actions/download-artifact@v4
+      - name: Download sdist
+        uses: actions/download-artifact@v4
         with:
           name: sdist
           path: dist
 
-      - name: Create Git Tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          TAG="v${{ needs.check-version.outputs.version }}"
-          git tag -a "$TAG" -m "Release $TAG"
-          git push origin "$TAG"
-
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
-          tag: v${{ needs.check-version.outputs.version }}
+          tag: ${{ github.ref_name }}
           artifacts: "dist/*"
           generateReleaseNotes: true
 

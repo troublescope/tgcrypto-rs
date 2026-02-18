@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "tgcrypto"
-version = "2.1.1"
+version = "2.1.2"
 description = "Rust-based TgCrypto module for Pyrogram"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -22,4 +22,5 @@ classifiers = [
 ]
 
 [tool.maturin]
+include = ["COPYING*", "NOTICE"]
 features = ["pyo3/extension-module"]
