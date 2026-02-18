@@ -1,94 +1,84 @@
-name: Build wheels AND Upload Python Package
+name: Build and Publish Wheels
 
 on:
-  release:
-    types: [published]
   push:
     tags:
-    - '*'
-  workflow_dispatch: {}
+      - "v*"
+  release:
+    types: [published]
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build_wheels:
-    name: Build wheels on ${{ matrix.os.name }}
-    runs-on: ${{ matrix.os.name }}
+  build:
+    name: Build wheels (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os:
-          - name: "ubuntu-24.04"
-            platform: "linux"
-            platform_id: "manylinux_x86_64"
-
-          - name: "ubuntu-24.04-arm"
-            platform: "linux"
-            platform_id: "manylinux_aarch64"
-
-          - name: "macos-14"
-            platform: "macos"
-            min_macos_version: "14"
-            platform_id: "macosx_arm64"
-
-          - name: "windows-2025"
-            platform: "windows"
-            platform_id: "win_amd64"
+          - ubuntu-22.04
+          - macos-13
+          - macos-14
+          - windows-2022
 
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      - name: Set up QEMU
-        if: runner.os == 'Linux' && runner.arch == 'X64'
+      - name: Enable QEMU (Linux cross-arch)
+        if: runner.os == 'Linux'
         uses: docker/setup-qemu-action@v3
         with:
           platforms: all
 
-      - name: Build wheels
+      - name: Build wheels via cibuildwheel
         uses: pypa/cibuildwheel@v3.3.1
         env:
-          # 1. Enable PyPy builds (Required in v3+)
-          CIBW_ENABLE: pypy
-          # 2. Configure Architectures
-          CIBW_ARCHS_LINUX: ${{ runner.arch == 'X64' && 'auto ppc64le s390x' || 'auto armv7l' }}
-          CIBW_ARCHS_MACOS: "x86_64 universal2 arm64"
-          # SKIP ALL FREE-THREADING BUILDS (t-suffix)
-          CIBW_SKIP: "*t-*"
-          # 3. Build & Test Settings
-          CIBW_TEST_REQUIRES: tox
-          CIBW_TEST_COMMAND: cd {project} && tox
-          CIBW_TEST_SKIP: "*"
+          CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-*"
+          CIBW_SKIP: "*-musllinux_* *-win32 *t-*"
+          CIBW_ARCHS_LINUX: "x86_64 aarch64 ppc64le s390x"
+          CIBW_ARCHS_MACOS: "x86_64 arm64 universal2"
+          CIBW_ARCHS_WINDOWS: "AMD64"
+          CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
+          CIBW_MANYLINUX_AARCH64_IMAGE: manylinux_2_28
+          CIBW_MANYLINUX_PPC64LE_IMAGE: manylinux_2_28
+          CIBW_MANYLINUX_S390X_IMAGE: manylinux_2_28
           CIBW_BUILD_VERBOSITY: 1
 
-      - name: Store wheels
+      - name: Upload wheel artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dist-${{ matrix.os.name }}-${{ strategy.job-index }}
-          path: ./wheelhouse/*.whl
+          name: wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl
 
   publish:
-    name: Publish wheels to PyPI
-    needs: build_wheels
+    name: Publish to PyPI
+    needs: build
     runs-on: ubuntu-latest
     permissions:
-      id-token: write  # IMPORTANT: mandatory for trusted publishing
+      id-token: write
+      contents: write
 
     steps:
-      - name: Download artifacts
+      - name: Download all wheels
         uses: actions/download-artifact@v4
         with:
-          pattern: dist-*
+          pattern: wheels-*
           path: dist
           merge-multiple: true
 
-      - name: Create Release
-        uses: ncipollo/release-action@v1.14.0
+      - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
+        uses: ncipollo/release-action@v1
         with:
           artifacts: "dist/*.whl"
           generateReleaseNotes: true
 
-      - name: Publish wheels to PyPI
+      - name: Publish wheels to PyPI (Trusted Publishing)
+        if: startsWith(github.ref, 'refs/tags/')
         uses: pypa/gh-action-pypi-publish@release/v1
