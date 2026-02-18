@@ -3,8 +3,8 @@ requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "tgcrypto"
-version = "2.1.4"
+name = "tgcrypto-rs"
+version = "2.1.5"
 description = "Rust-based TgCrypto module for Pyrogram"
 readme = "README.md"
 requires-python = ">=3.8"
