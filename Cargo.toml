@@ -1,6 +1,6 @@
 [package]
 name = "tgcrypto-rs"
-version = "2.1.6"
+version = "2.1.7"
 edition = "2021"
 description = "High-performance Rust-powered TgCrypto module providing secure and optimized MTProto cryptography for Pyrogram."
 authors = ["Troublescope <tomiprs.eth@gmail.com>"]
