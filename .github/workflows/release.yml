@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
   workflow_dispatch:
 
 permissions:
@@ -14,13 +14,14 @@ jobs:
   build-wheels:
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
             target: x86_64
           - os: ubuntu-latest
             target: aarch64
+          - os: ubuntu-latest
+            target: armv7
           - os: ubuntu-latest
             target: ppc64le
           - os: ubuntu-latest
@@ -31,23 +32,16 @@ jobs:
             target: aarch64
           - os: windows-latest
             target: x64
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up QEMU
         if: matrix.os == 'ubuntu-latest' && matrix.target != 'x86_64'
         uses: docker/setup-qemu-action@v3
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
           args: --release --strip
-
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -58,16 +52,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
           command: sdist
           args: --out dist
-
       - name: Upload sdist
         uses: actions/upload-artifact@v4
         with:
@@ -75,34 +64,26 @@ jobs:
           path: dist/*.tar.gz
 
   publish:
+    name: Publish to PyPI
     needs: [build-wheels, build-sdist]
-    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-
+    if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Download wheel artifacts
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: wheels-*
           path: dist
           merge-multiple: true
-
-      - name: Download sdist
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: sdist
           path: dist
-
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ github.ref_name }}
           artifacts: "dist/*"
           generateReleaseNotes: true
-
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
