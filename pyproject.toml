@@ -1,3 +1,25 @@
 [build-system]
-requires = ["setuptools<=69.5.1", "wheel<=0.43.0"]
-build-backend = "setuptools.build_meta"
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "tgcrypto"
+version = "2.0.0"
+description = "Rust-based TgCrypto module for Pyrogram"
+readme = "README.md"
+requires-python = ">=3.7"
+license = { text = "LGPL-3.0-or-later" }
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[tool.maturin]
+features = ["pyo3/extension-module"]

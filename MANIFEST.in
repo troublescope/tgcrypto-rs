@@ -1,3 +1,15 @@
-## Include
-include COPYING COPYING.lesser NOTICE
-recursive-include tgcrypto *.c *.h
+include README.md
+include COPYING
+include COPYING.lesser
+include LICENSE
+include MANIFEST.in
+include pyproject.toml
+include Cargo.toml
+include src/*.rs
+include tests/*.rs
+include tgcrypto.pyi
+exclude .gitignore
+exclude .github/*
+exclude tests/benchmark.py
+exclude setup.py
+exclude tox.ini

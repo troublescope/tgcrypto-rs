@@ -1,0 +1,23 @@
+[package]
+name = "tgcrypto"
+version = "2.0.0"
+edition = "2021"
+
+[lib]
+name = "tgcrypto"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.20", features = ["extension-module"] }
+aes = "0.8"
+cbc = "0.1"
+sha1 = "0.10"
+sha2 = "0.10"
+num-bigint = "0.4"
+num-traits = "0.2"
+num-integer = "0.1"
+rand = "0.8"
+lazy_static = "1.4"
+
+[build-dependencies]
+pyo3-build-config = "0.20"
