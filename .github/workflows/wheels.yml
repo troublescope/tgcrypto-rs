@@ -72,6 +72,8 @@ jobs:
     name: Publish wheels to PyPI
     needs: build_wheels
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
 
     steps:
       - name: Download artifacts
@@ -79,26 +81,14 @@ jobs:
         with:
           pattern: dist-*
           path: dist
-
-      - name: Setup python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install Twine
-        run: |
-          pip install twine
-          cd dist && for i in $(ls); do mv ${i}/*.whl .; rmdir ${i}; done && cd ..
+          merge-multiple: true
 
       - name: Create Release
         uses: ncipollo/release-action@v1.14.0
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           artifacts: "dist/*.whl"
-          tag: "TgCrypto-${{ github.ref_name }}"
-          commit: ${{ github.sha }}
+          generateReleaseNotes: true
 
       - name: Publish wheels to PyPI
-        run: twine upload dist/*
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        uses: pypa/gh-action-pypi-publish@release/v1

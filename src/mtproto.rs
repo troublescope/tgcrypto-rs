@@ -5,9 +5,9 @@ use pyo3::types::PyBytes;
 /// Generate session ID from auth key
 /// The session ID is the first 8 bytes of SHA1(auth_key) in reverse byte order
 #[pyfunction]
-#[pyo3(text_signature = "(auth_key, /)")]
-pub fn get_session_id(py: Python, auth_key: &[u8]) -> PyResult<PyObject> {
-    let session_id = py.allow_threads(|| {
+#[pyo3(signature = (auth_key, /))]
+pub fn get_session_id<'py>(py: Python<'py>, auth_key: &[u8]) -> PyResult<Bound<'py, PyBytes>> {
+    let session_id = py.detach(|| {
         let mut hasher = Sha1::new();
         hasher.update(auth_key);
         let hash = hasher.finalize();
@@ -19,5 +19,5 @@ pub fn get_session_id(py: Python, auth_key: &[u8]) -> PyResult<PyObject> {
         session_id
     });
 
-    Ok(PyBytes::new(py, &session_id).into())
+    Ok(PyBytes::new(py, &session_id))
 }

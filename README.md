@@ -15,12 +15,35 @@ This module provides cryptographic primitives required for Telegram's MTProto pr
 - **Pollard's rho** integer factorization for MTProto handshake
 - **MTProto helpers** (session ID generation)
 
+## Recent Updates
+
+- **PyO3 0.28+**: Updated to the latest PyO3 for better performance and support for Python 3.13.
+- **Modern Dependencies**: Updated all cryptographic and utility crates to their latest stable versions.
+- **Enhanced Type Hints**: Improved `.pyi` file for better IDE support.
+- **Modern CI/CD**: Updated GitHub Actions to use latest tools and secure publishing.
+
+## Performance Comparison
+
+Benchmarks were performed on 64KB data chunks (Android, AArch64).
+
+| Operation | Official (C) | Rust (Current) | Ratio |
+|-----------|--------------|----------------|-------|
+| AES-IGE   | 0.53 ms      | 2.92 ms        | 0.18x |
+| AES-CTR   | 0.66 ms      | 2.97 ms        | 0.22x |
+| AES-CBC   | 0.50 ms      | 2.77 ms        | 0.18x |
+| SHA1      | N/A          | 0.15 ms        | -     |
+| SHA256    | N/A          | 0.30 ms        | -     |
+| RSA Enc.  | N/A          | 0.64 ms        | -     |
+| Fact.     | N/A          | 0.004 ms       | -     |
+
+*Note: The official C implementation uses highly optimized assembly for AES on ARM, whereas this Rust implementation currently uses the standard `aes` crate. Future optimizations may close this gap.*
+
 ## Installation
 
 ### Prerequisites
 
 - Rust toolchain (install via [rustup](https://rustup.rs))
-- Python 3.7+
+- Python 3.8+
 - `maturin` for building Python extensions
 
 ```bash

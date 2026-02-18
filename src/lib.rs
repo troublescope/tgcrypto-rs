@@ -7,7 +7,7 @@ mod rsa;
 mod sha;
 
 #[pymodule]
-fn tgcrypto(_py: Python, m: &PyModule) -> PyResult<()> {
+fn tgcrypto(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(sha::sha1, m)?)?;
     m.add_function(wrap_pyfunction!(sha::sha256, m)?)?;
     m.add_function(wrap_pyfunction!(aes::ige256_encrypt, m)?)?;

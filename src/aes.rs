@@ -13,8 +13,13 @@ fn xor_blocks(a: &mut [u8; 16], b: &[u8; 16]) {
 
 /// AES-256-IGE Encryption
 #[pyfunction]
-#[pyo3(text_signature = "(data, key, iv, /)")]
-pub fn ige256_encrypt(py: Python, data: &[u8], key: &PyAny, iv: &PyAny) -> PyResult<PyObject> {
+#[pyo3(signature = (data, key, iv, /))]
+pub fn ige256_encrypt<'py>(
+    py: Python<'py>,
+    data: &[u8],
+    key: Bound<'py, PyAny>,
+    iv: Bound<'py, PyAny>,
+) -> PyResult<Bound<'py, PyBytes>> {
     // Convert key (bytes or bytearray) to Vec<u8>
     let key_bytes: Vec<u8> = key.extract()?;
     if key_bytes.len() != 32 {
@@ -37,7 +42,7 @@ pub fn ige256_encrypt(py: Python, data: &[u8], key: &PyAny, iv: &PyAny) -> PyRes
         ));
     }
 
-    let result = py.allow_threads(|| {
+    let result = py.detach(|| {
         let cipher = Aes256::new(key_bytes.as_slice().into());
         // For encryption: iv1 = iv[0:16], iv2 = iv[16:32]
         let mut iv1: [u8; 16] = iv_bytes[..16].try_into().unwrap();
@@ -66,13 +71,18 @@ pub fn ige256_encrypt(py: Python, data: &[u8], key: &PyAny, iv: &PyAny) -> PyRes
         result
     });
 
-    Ok(PyBytes::new(py, &result).into())
+    Ok(PyBytes::new(py, &result))
 }
 
 /// AES-256-IGE Decryption
 #[pyfunction]
-#[pyo3(text_signature = "(data, key, iv, /)")]
-pub fn ige256_decrypt(py: Python, data: &[u8], key: &PyAny, iv: &PyAny) -> PyResult<PyObject> {
+#[pyo3(signature = (data, key, iv, /))]
+pub fn ige256_decrypt<'py>(
+    py: Python<'py>,
+    data: &[u8],
+    key: Bound<'py, PyAny>,
+    iv: Bound<'py, PyAny>,
+) -> PyResult<Bound<'py, PyBytes>> {
     // Convert key (bytes or bytearray) to Vec<u8>
     let key_bytes: Vec<u8> = key.extract()?;
     if key_bytes.len() != 32 {
@@ -95,7 +105,7 @@ pub fn ige256_decrypt(py: Python, data: &[u8], key: &PyAny, iv: &PyAny) -> PyRes
         ));
     }
 
-    let result = py.allow_threads(|| {
+    let result = py.detach(|| {
         let cipher = Aes256::new(key_bytes.as_slice().into());
         // For decryption: iv2 = iv[0:16], iv1 = iv[16:32] (SWAPPED!)
         let mut iv1: [u8; 16] = iv_bytes[16..].try_into().unwrap();
@@ -126,20 +136,20 @@ pub fn ige256_decrypt(py: Python, data: &[u8], key: &PyAny, iv: &PyAny) -> PyRes
         result
     });
 
-    Ok(PyBytes::new(py, &result).into())
+    Ok(PyBytes::new(py, &result))
 }
 
 /// AES-256-CTR Encryption/Decryption
 /// This matches the pyaes implementation where state[0] is the position in the keystream block
 #[pyfunction]
-#[pyo3(text_signature = "(data, key, iv, state, /)")]
-pub fn ctr256_encrypt(
-    py: Python,
-    data: &PyAny,
-    key: &PyAny,
-    iv: &PyAny,
-    state: &PyAny,
-) -> PyResult<PyObject> {
+#[pyo3(signature = (data, key, iv, state, /))]
+pub fn ctr256_encrypt<'py>(
+    py: Python<'py>,
+    data: Bound<'py, PyAny>,
+    key: Bound<'py, PyAny>,
+    iv: Bound<'py, PyAny>,
+    state: Bound<'py, PyAny>,
+) -> PyResult<Bound<'py, PyBytes>> {
     // Convert key (bytes or bytearray) to Vec<u8>
     let key_bytes: Vec<u8> = key.extract()?;
     if key_bytes.len() != 32 {
@@ -163,7 +173,7 @@ pub fn ctr256_encrypt(
     let state_bytes: Vec<u8> = state.extract().unwrap_or_default();
     let mut ks_pos = if !state_bytes.is_empty() { state_bytes[0] as usize } else { 0 };
 
-    let out = py.allow_threads(|| {
+    let out = py.detach(|| {
         let cipher = Aes256::new(key_bytes.as_slice().into());
         let mut out = data_bytes;
         let mut iv_array: [u8; 16] = iv_bytes.try_into().unwrap();
@@ -204,7 +214,7 @@ pub fn ctr256_encrypt(
     let (out_bytes, final_iv, final_state) = out;
 
     // Update state bytearray
-    if let Ok(state_bytes_obj) = state.downcast::<PyByteArray>() {
+    if let Ok(state_bytes_obj) = state.cast_into::<PyByteArray>() {
         if state_bytes_obj.len() > 0 {
             let slice = unsafe { state_bytes_obj.as_bytes_mut() };
             slice[0] = final_state as u8;
@@ -212,34 +222,39 @@ pub fn ctr256_encrypt(
     }
 
     // Update IV bytearray
-    if let Ok(iv_bytes_obj) = iv.downcast::<PyByteArray>() {
+    if let Ok(iv_bytes_obj) = iv.cast_into::<PyByteArray>() {
         if iv_bytes_obj.len() == 16 {
             let slice = unsafe { iv_bytes_obj.as_bytes_mut() };
             slice.copy_from_slice(&final_iv);
         }
     }
 
-    Ok(PyBytes::new(py, &out_bytes).into())
+    Ok(PyBytes::new(py, &out_bytes))
 }
 
 /// AES-256-CTR Decryption
 #[pyfunction]
-#[pyo3(text_signature = "(data, key, iv, state, /)")]
-pub fn ctr256_decrypt(
-    py: Python,
-    data: &PyAny,
-    key: &PyAny,
-    iv: &PyAny,
-    state: &PyAny,
-) -> PyResult<PyObject> {
+#[pyo3(signature = (data, key, iv, state, /))]
+pub fn ctr256_decrypt<'py>(
+    py: Python<'py>,
+    data: Bound<'py, PyAny>,
+    key: Bound<'py, PyAny>,
+    iv: Bound<'py, PyAny>,
+    state: Bound<'py, PyAny>,
+) -> PyResult<Bound<'py, PyBytes>> {
     // CTR mode is symmetric
     ctr256_encrypt(py, data, key, iv, state)
 }
 
 /// AES-256-CBC Encryption
 #[pyfunction]
-#[pyo3(text_signature = "(data, key, iv, /)")]
-pub fn cbc256_encrypt(py: Python, data: &[u8], key: &PyAny, iv: &PyAny) -> PyResult<PyObject> {
+#[pyo3(signature = (data, key, iv, /))]
+pub fn cbc256_encrypt<'py>(
+    py: Python<'py>,
+    data: &[u8],
+    key: Bound<'py, PyAny>,
+    iv: Bound<'py, PyAny>,
+) -> PyResult<Bound<'py, PyBytes>> {
     // Convert key (bytes or bytearray) to Vec<u8>
     let key_bytes: Vec<u8> = key.extract()?;
     if key_bytes.len() != 32 {
@@ -262,7 +277,7 @@ pub fn cbc256_encrypt(py: Python, data: &[u8], key: &PyAny, iv: &PyAny) -> PyRes
         ));
     }
 
-    let (result, final_iv) = py.allow_threads(|| {
+    let (result, final_iv) = py.detach(|| {
         let mut iv_array: [u8; 16] = iv_bytes.try_into().unwrap();
         let mut cipher = cbc::Encryptor::<Aes256>::new_from_slices(&key_bytes, &iv_array).unwrap();
         
@@ -283,20 +298,25 @@ pub fn cbc256_encrypt(py: Python, data: &[u8], key: &PyAny, iv: &PyAny) -> PyRes
     });
 
     // Update IV bytearray
-    if let Ok(iv_bytes_obj) = iv.downcast::<PyByteArray>() {
+    if let Ok(iv_bytes_obj) = iv.cast_into::<PyByteArray>() {
         if iv_bytes_obj.len() == 16 {
             let slice = unsafe { iv_bytes_obj.as_bytes_mut() };
             slice.copy_from_slice(&final_iv);
         }
     }
 
-    Ok(PyBytes::new(py, &result).into())
+    Ok(PyBytes::new(py, &result))
 }
 
 /// AES-256-CBC Decryption
 #[pyfunction]
-#[pyo3(text_signature = "(data, key, iv, /)")]
-pub fn cbc256_decrypt(py: Python, data: &[u8], key: &PyAny, iv: &PyAny) -> PyResult<PyObject> {
+#[pyo3(signature = (data, key, iv, /))]
+pub fn cbc256_decrypt<'py>(
+    py: Python<'py>,
+    data: &[u8],
+    key: Bound<'py, PyAny>,
+    iv: Bound<'py, PyAny>,
+) -> PyResult<Bound<'py, PyBytes>> {
     // Convert key (bytes or bytearray) to Vec<u8>
     let key_bytes: Vec<u8> = key.extract()?;
     if key_bytes.len() != 32 {
@@ -319,7 +339,7 @@ pub fn cbc256_decrypt(py: Python, data: &[u8], key: &PyAny, iv: &PyAny) -> PyRes
         ));
     }
 
-    let (result, final_iv) = py.allow_threads(|| {
+    let (result, final_iv) = py.detach(|| {
         let iv_array: [u8; 16] = iv_bytes.try_into().unwrap();
         let mut cipher = cbc::Decryptor::<Aes256>::new_from_slices(&key_bytes, &iv_array).unwrap();
         
@@ -341,12 +361,12 @@ pub fn cbc256_decrypt(py: Python, data: &[u8], key: &PyAny, iv: &PyAny) -> PyRes
     });
 
     // Update IV bytearray
-    if let Ok(iv_bytes_obj) = iv.downcast::<PyByteArray>() {
+    if let Ok(iv_bytes_obj) = iv.cast_into::<PyByteArray>() {
         if iv_bytes_obj.len() == 16 {
             let slice = unsafe { iv_bytes_obj.as_bytes_mut() };
             slice.copy_from_slice(&final_iv);
         }
     }
 
-    Ok(PyBytes::new(py, &result).into())
+    Ok(PyBytes::new(py, &result))
 }

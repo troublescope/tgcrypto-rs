@@ -81,9 +81,9 @@ lazy_static::lazy_static! {
 
 /// RSA encrypt using Telegram server public key
 #[pyfunction]
-#[pyo3(text_signature = "(data, fingerprint, /)")]
-pub fn rsa_encrypt(py: Python, data: &[u8], fingerprint: i64) -> PyResult<PyObject> {
-    let result = py.allow_threads(|| {
+#[pyo3(signature = (data, fingerprint, /))]
+pub fn rsa_encrypt<'py>(py: Python<'py>, data: &[u8], fingerprint: i64) -> PyResult<Bound<'py, PyBytes>> {
+    let result = py.detach(|| {
         let pubkey = SERVER_PUBLIC_KEYS.get(&fingerprint).ok_or_else(|| {
             PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
                 "Unknown fingerprint: {}",
@@ -111,5 +111,5 @@ pub fn rsa_encrypt(py: Python, data: &[u8], fingerprint: i64) -> PyResult<PyObje
         Ok::<Vec<u8>, PyErr>(result)
     })?;
 
-    Ok(PyBytes::new(py, &result).into())
+    Ok(PyBytes::new(py, &result))
 }

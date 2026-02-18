@@ -2,7 +2,7 @@ use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::{One, ToPrimitive, Zero};
 use pyo3::prelude::*;
-use rand::Rng;
+use rand::RngExt;
 
 /// Pollard's rho algorithm for integer factorization
 /// Returns a non-trivial factor of pq
@@ -14,12 +14,12 @@ fn pollard_rho(n: &BigUint) -> BigUint {
         return two;
     }
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     // Try different starting values and constants if needed
     for _ in 0..10 {
-        let x_start: u32 = rng.gen_range(2..1000);
-        let c: u32 = rng.gen_range(1..100);
+        let x_start: u32 = rng.random_range(2..1000);
+        let c: u32 = rng.random_range(1..100);
 
         let mut x = BigUint::from(x_start);
         let mut y = x.clone();
@@ -58,8 +58,8 @@ fn pollard_rho(n: &BigUint) -> BigUint {
 
 /// Find a non-trivial factor using Pollard's rho algorithm
 #[pyfunction]
-#[pyo3(text_signature = "(pq, /)")]
-pub fn factorize(_py: Python, pq: i128) -> PyResult<i128> {
+#[pyo3(signature = (pq, /))]
+pub fn factorize(pq: i128) -> PyResult<i128> {
     if pq <= 0 {
         return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
             "pq must be positive",

@@ -1,14 +1,14 @@
-def ige256_encrypt(data: bytes, key: bytes, iv: bytes) -> bytes:
+def ige256_encrypt(data: bytes, key: bytes, iv: bytes | bytearray) -> bytes:
     """AES-256-IGE Encryption"""
-def ige256_decrypt(data: bytes, key: bytes, iv: bytes) -> bytes:
+def ige256_decrypt(data: bytes, key: bytes, iv: bytes | bytearray) -> bytes:
     """AES-256-IGE Decryption"""
-def ctr256_encrypt(data: bytes, key: bytes, iv: bytes, state: int) -> bytes:
+def ctr256_encrypt(data: bytes, key: bytes, iv: bytes | bytearray, state: bytes | bytearray) -> bytes:
     """AES-256-CTR Encryption"""
-def ctr256_decrypt(data: bytes, key: bytes, iv: bytes, state: int) -> bytes:
+def ctr256_decrypt(data: bytes, key: bytes, iv: bytes | bytearray, state: bytes | bytearray) -> bytes:
     """AES-256-CTR Decryption"""
-def cbc256_encrypt(data: bytes, key: bytes, iv: bytes) -> bytes:
+def cbc256_encrypt(data: bytes, key: bytes, iv: bytes | bytearray) -> bytes:
     """AES-256-CBC Encryption"""
-def cbc256_decrypt(data: bytes, key: bytes, iv: bytes) -> bytes:
+def cbc256_decrypt(data: bytes, key: bytes, iv: bytes | bytearray) -> bytes:
     """AES-256-CBC Decryption"""
 def sha1(data: bytes) -> bytes:
     """Compute SHA-1 hash"""
