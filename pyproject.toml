@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "tgcrypto-rs"
-version = "2.1.5"
+version = "2.1.6"
 description = "Rust-based TgCrypto module for Pyrogram"
 readme = "README.md"
 requires-python = ">=3.8"
