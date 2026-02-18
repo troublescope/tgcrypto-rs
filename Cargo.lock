@@ -481,8 +481,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "adb6935a6f5c20170eeceb1a3835a49e12e19d792f6dd344ccc76a985ca5a6ca"
 
 [[package]]
-name = "tgcrypto"
-version = "2.0.0"
+name = "tgcrypto-rs"
+version = "2.1.6"
 dependencies = [
  "aes",
  "cbc",

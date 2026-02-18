@@ -2,6 +2,14 @@
 name = "tgcrypto-rs"
 version = "2.1.6"
 edition = "2021"
+description = "High-performance Rust-powered TgCrypto module providing secure and optimized MTProto cryptography for Pyrogram."
+authors = ["Troublescope <tomiprs.eth@gmail.com>"]
+license = "LGPL-3.0-or-later"
+repository = "https://github.com/troublescope/tgcrypto-rs"
+homepage = "https://github.com/troublescope/tgcrypto-rs"
+readme = "README.md"
+keywords = ["telegram", "tgcrypto", "pyrogram", "mtproto", "crypto"]
+categories = ["cryptography"]
 
 [lib]
 name = "tgcrypto"
@@ -9,15 +17,24 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.28", features = ["extension-module", "abi3-py38"] }
+
 aes = "0.8"
 cbc = "0.1"
 sha1 = "0.10"
 sha2 = "0.10"
+
 num-bigint = "0.4"
 num-traits = "0.2"
 num-integer = "0.1"
+
 rand = "0.10"
 lazy_static = "1.5"
 
 [build-dependencies]
 pyo3-build-config = "0.28"
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+strip = true

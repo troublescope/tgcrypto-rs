@@ -5,11 +5,35 @@ build-backend = "maturin"
 [project]
 name = "tgcrypto-rs"
 version = "2.1.6"
-description = "Rust-based TgCrypto module for Pyrogram"
-readme = "README.md"
+description = "High-performance Rust-powered TgCrypto module providing secure and optimized MTProto cryptography for Pyrogram."
+readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.8"
 license = { text = "LGPL-3.0-or-later" }
+
+authors = [
+    { name = "Troublescope", email = "tomiprs.eth@gmail.com" }
+]
+
+maintainers = [
+    { name = "Troublescope", email = "tomiprs.eth@gmail.com" }
+]
+
+keywords = [
+    "telegram",
+    "tgcrypto",
+    "pyrogram",
+    "mtproto",
+    "rust",
+    "crypto",
+    "encryption",
+    "performance"
+]
+
 classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+    "Operating System :: OS Independent",
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: 3 :: Only",
@@ -19,8 +43,15 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Topic :: Security :: Cryptography"
 ]
+
+[project.urls]
+Homepage = "https://github.com/troublescope/tgcrypto-rs"
+Repository = "https://github.com/troublescope/tgcrypto-rs"
+Issues = "https://github.com/troublescope/tgcrypto-rs/issues"
 
 [tool.maturin]
 include = ["COPYING*", "NOTICE"]
 features = ["pyo3/extension-module"]
+strip = true
