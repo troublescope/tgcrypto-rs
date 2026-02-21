@@ -1,76 +1,58 @@
-use num_bigint::BigUint;
 use num_integer::Integer;
-use num_traits::{One, ToPrimitive, Zero};
 use pyo3::prelude::*;
-use rand::RngExt;
+use rand::Rng;
 
-/// Pollard's rho algorithm for integer factorization
-/// Returns a non-trivial factor of pq
-fn pollard_rho(n: &BigUint) -> BigUint {
-    let two = BigUint::from(2u32);
-    let one = BigUint::one();
-
-    if n.is_even() {
-        return two;
-    }
+#[inline(always)]
+fn pollard_rho_u128(n: u128) -> u128 {
+    if n % 2 == 0 { return 2; }
+    if n % 3 == 0 { return 3; }
 
     let mut rng = rand::rng();
 
-    // Try different starting values and constants if needed
     for _ in 0..10 {
-        let x_start: u32 = rng.random_range(2..1000);
-        let c: u32 = rng.random_range(1..100);
+        let x_start = rng.random_range(2..std::cmp::min(n, 1000000));
+        let c = rng.random_range(1..std::cmp::min(n, 1000));
 
-        let mut x = BigUint::from(x_start);
-        let mut y = x.clone();
-        let c_big = BigUint::from(c);
-        let mut d = BigUint::one();
+        let mut x = x_start;
+        let mut y = x;
+        let mut d = 1;
 
-        while d.is_one() {
-            // x = (x^2 + c) mod n
-            x = (&x * &x + &c_big) % n;
+        while d == 1 {
+            // x = (x*x + c) % n
+            x = (u128::wrapping_mul(x, x).wrapping_add(c)) % n;
 
-            // y = (y^2 + c) mod n, twice (Floyd's cycle-finding)
-            y = (&y * &y + &c_big) % n;
-            y = (&y * &y + &c_big) % n;
+            // y = (y*y + c) % n, twice
+            y = (u128::wrapping_mul(y, y).wrapping_add(c)) % n;
+            y = (u128::wrapping_mul(y, y).wrapping_add(c)) % n;
 
-            // d = gcd(|x - y|, n)
-            let diff = if x > y { &x - &y } else { &y - &x };
-            d = diff.gcd(n);
+            let diff = if x > y { x - y } else { y - x };
+            d = diff.gcd(&n);
         }
 
-        if d != *n && d != one {
+        if d != n && d != 1 {
             return d;
         }
     }
 
-    // Fallback: simple trial division for small factors
-    for i in 3..10000u32 {
-        let i_big = BigUint::from(i);
-        if (n % &i_big).is_zero() {
-            return i_big;
-        }
+    // Trial division fallback for small factors
+    let limit = std::cmp::min(n, 10000);
+    for i in (3..limit).step_by(2) {
+        if n % i == 0 { return i; }
     }
 
-    // Last resort: return n itself (shouldn't happen for valid PQ)
-    n.clone()
+    n
 }
 
 /// Find a non-trivial factor using Pollard's rho algorithm
 #[pyfunction]
 #[pyo3(signature = (pq, /))]
 pub fn factorize(pq: i128) -> PyResult<i128> {
-    if pq <= 0 {
-        return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-            "pq must be positive",
-        ));
+    if pq <= 1 {
+        return Ok(pq);
     }
 
-    let pq_big = BigUint::from(pq as u128);
-    let factor = pollard_rho(&pq_big);
+    let n = pq as u128;
+    let factor = pollard_rho_u128(n);
 
-    // Convert back to i128
-    let result = factor.to_i128().unwrap_or(pq);
-
-    Ok(result)
+    Ok(factor as i128)
 }
