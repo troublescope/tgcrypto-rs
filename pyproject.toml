@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "tgcrypto-rs"
-version = "2.1.7"
+version = "2.2.0"
 description = "High-performance Rust-powered TgCrypto module providing secure and optimized MTProto cryptography for Pyrogram."
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.8"
